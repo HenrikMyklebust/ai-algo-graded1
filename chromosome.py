@@ -1,28 +1,16 @@
 import random as rnd
-
-mutation_rate = 0.05
-
-
-def map_to_operator(val):
-    match val:
-        case 0:
-            return '+'
-        case 1:
-            return '-'
-        case 2:
-            return '*'
-        case 3:
-            return '/'
-        case _:
-            return None
+import math
 
 
 class Chromosome:
-    def __init__(self, feature_1, feature_2, feature_3):
-        self.feature_1 = feature_1  # [-1000, 1000]
-        self.feature_2 = feature_2  # [-200, 200]
-        self.feature_3 = feature_3  # [+, -, *, /]
+    def __init__(self, feature_a, feature_b, feature_y, feature_d, feature_o, mutation_rate):
+        self.feature_a = feature_a  # [0, 45]
+        self.feature_b = feature_b  # [2, 5]
+        self.feature_y = feature_y  # [0.55, 0.75]
+        self.feature_d = feature_d  # [1000, 2000]
+        self.feature_o = feature_o  # [0.5, 5.0]
         self.fitness = float('inf')
+        self.mutation_rate = mutation_rate
 
     def set_fitness(self, new_fitness):
         self.fitness = new_fitness
@@ -30,44 +18,53 @@ class Chromosome:
     def get_fitness(self):
         return self.fitness
 
-    def crossover(self, other):
+    def arithmetic_crossover(self, other):
         chance = bool(rnd.randint(0, 1))
-        return Chromosome((self.feature_1 + other.feature_1) / 2,
-                          (self.feature_2 + other.feature_2) / 2,
-                          self.feature_3 if chance else other.feature_3)
+        return Chromosome(
+            (self.feature_a + other.feature_a) / 2,
+            self.feature_b if chance else other.feature_b,
+            (self.feature_y + other.feature_y) / 2,
+            (self.feature_d + other.feature_d) / 2,
+            (self.feature_o + other.feature_o) / 2,
+            self.mutation_rate)
 
     def mutate(self):
         chance = rnd.random()
-        if chance < mutation_rate:
-            self.feature_1 += rnd.randint(-100, 100)
-            if self.feature_1 > 1000:
-                self.feature_1 = 1000
-            elif self.feature_1 < -1000:
-                self.feature_1 = -1000
+        if chance < self.mutation_rate:
+            self.feature_a += rnd.randint(-5, 5)
+            if self.feature_a > 45:
+                self.feature_a = 45
+            elif self.feature_a < 0:
+                self.feature_a = 0
 
-                self.feature_2 += rnd.randint(-30, 30)
-            if self.feature_2 > 200:
-                self.feature_2 = 200
-            elif self.feature_2 < -200:
-                self.feature_2 = -200
+                self.feature_b += rnd.randint(-2, 2)
+            if self.feature_b > 5:
+                self.feature_b = 5
+            elif self.feature_b < 2:
+                self.feature_b = 2
 
-                self.feature_3 += rnd.randint(-2, 2)
-            if self.feature_3 > 3:
-                self.feature_3 = 3
-            elif self.feature_3 < 0:
-                self.feature_3 = 0
+                self.feature_y += rnd.uniform(-0.02, 0.02)
+            if self.feature_y > 0.75:
+                self.feature_y = 0.75
+            elif self.feature_y < 0.55:
+                self.feature_y = 0.55
+
+                self.feature_d += rnd.randint(-100, 100)
+            if self.feature_d > 2000:
+                self.feature_d = 2000
+            elif self.feature_d < 1000:
+                self.feature_d = 1000
+
+                self.feature_o += rnd.uniform(-0.5, 0.5)
+            if self.feature_o > 5.0:
+                self.feature_o = 5.0
+            elif self.feature_o < 0.5:
+                self.feature_o = 0.5
 
     def eval(self):
-        if map_to_operator(self.feature_3) == '+':
-            return self.feature_1 + self.feature_2
-        if map_to_operator(self.feature_3) == '-':
-            return self.feature_1 - self.feature_2
-        if map_to_operator(self.feature_3) == '*':
-            return self.feature_1 * self.feature_2
-        if map_to_operator(self.feature_3) == '/':
-            return self.feature_1 / self.feature_2
-        else:
-            return float('inf')
+        return (pow(self.feature_a, self.feature_b) + math.log(self.feature_y)) / \
+               (self.feature_d + pow(self.feature_o, 3))
 
     def __str__(self):
-        return "{} {} {} = {}".format(self.feature_1, map_to_operator(self.feature_3), self.feature_2, self.eval())
+        return "({}^{} + ln({:.3f})) / ({} + {:.3f}^3) = {:.3f}".format(self.feature_a, self.feature_b, self.feature_y,
+                                                                        self.feature_d, self.feature_o, eval())
