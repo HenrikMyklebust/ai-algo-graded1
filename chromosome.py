@@ -13,16 +13,19 @@ def to_binary(number):
         num = bin(int(num))[2:]
         decimal = bin(int(decimal))[2:]
 
-        while len(num) < len("00000000000"):
-            num = "0" + num
+        difference = len("00000000000") - len(num)
+        if difference > 0:
+            num = "0" * difference + num
 
-        while len(decimal) < len("0000000"):
-            decimal = "0" + decimal
+        difference = len("0000000") - len(decimal)
+        if difference > 0:
+            decimal = "0" * difference + decimal
+
         return "{}.{}".format(num, decimal)
 
     # 00000000000.0000000 to 11111010000.0000000
     elif type(number) == int:
-        num = to_binary(int(number))[2:]
+        num = bin(int(number))[2:]
 
         while len(num) < len("00000000000"):
             num = "0" + num
@@ -42,12 +45,22 @@ def to_number(binary):
 
 
 def change_bit(number):
-    bit_index = rnd.randint(0, len(number))
-    if number[bit_index] == "0":
-        number[bit_index] = 1
+    bit_index = rnd.randint(0, len(number) - 1)
+    new_number = ""
+    if number[bit_index] == '0':
+        for i in range(len(number)):
+            if i == bit_index:
+                new_number = new_number + "1"
+            else:
+                new_number = new_number + number[i]
     else:
-        number[bit_index] = 0
-    return number
+        for i in range(len(number)):
+            if i == bit_index:
+                new_number = new_number + "0"
+            else:
+                new_number = new_number + number[i]
+    return new_number
+
 
 class Chromosome:
     def __init__(self, feature_a, feature_b, feature_y, feature_d, feature_o, mutation_rate):
@@ -70,9 +83,9 @@ class Chromosome:
         return Chromosome(
             to_binary(int((to_number(self.feature_a) + to_number(other.feature_a)) / 2)),
             to_binary(int((to_number(self.feature_b) + to_number(other.feature_b)) / 2)),
-            to_binary(int((to_number(self.feature_y) + to_number(other.feature_y)) / 2)), # Should be float
+            to_binary((to_number(self.feature_y) + to_number(other.feature_y)) / 2), # Should be float
             to_binary(int((to_number(self.feature_d) + to_number(other.feature_d)) / 2)),
-            to_binary(int((to_number(self.feature_o) + to_number(other.feature_o)) / 2)), # Should be float
+            to_binary((to_number(self.feature_o) + to_number(other.feature_o)) / 2), # Should be float
             self.mutation_rate)
 
     def single_point_crossover(self, other):
@@ -87,11 +100,37 @@ class Chromosome:
     def multi_point_crossover(self, other):
         feature_a, feature_b, feature_y, feature_d, feature_o = "", "", "", "", ""
         for i in range(len(self.feature_a)):
-            feature_a = feature_a + self.feature_a[i] if bool(rnd.randint(0, 1)) else other.feature_a[i]
-            feature_b = feature_b + self.feature_b[i] if bool(rnd.randint(0, 1)) else other.feature_b[i]
-            feature_y = feature_y + self.feature_y[i] if bool(rnd.randint(0, 1)) else other.feature_y[i]
-            feature_d = feature_d + self.feature_d[i] if bool(rnd.randint(0, 1)) else other.feature_d[i]
-            feature_o = feature_o + self.feature_o[i] if bool(rnd.randint(0, 1)) else other.feature_o[i]
+            feature_a = feature_a + self.feature_a[i] if bool(rnd.randint(0, 1)) else feature_a + other.feature_a[i]
+            feature_b = feature_b + self.feature_b[i] if bool(rnd.randint(0, 1)) else feature_b + other.feature_b[i]
+            feature_y = feature_y + self.feature_y[i] if bool(rnd.randint(0, 1)) else feature_y + other.feature_y[i]
+            feature_d = feature_d + self.feature_d[i] if bool(rnd.randint(0, 1)) else feature_d + other.feature_d[i]
+            feature_o = feature_o + self.feature_o[i] if bool(rnd.randint(0, 1)) else feature_o + other.feature_o[i]
+
+        if feature_a > to_binary(45):
+            feature_a = to_binary(45)
+        elif feature_a < to_binary(0):
+            feature_a = to_binary(0)
+
+        if feature_b > to_binary(5):
+            feature_b = to_binary(5)
+        elif feature_b < to_binary(2):
+            feature_b = to_binary(2)
+
+        if feature_y > to_binary(0.75):
+            feature_y = to_binary(0.75)
+        elif feature_y < to_binary(0.55):
+            feature_y = to_binary(0.55)
+
+        if feature_d > to_binary(2000):
+            feature_d = to_binary(2000)
+        elif feature_d < to_binary(1000):
+            feature_d = to_binary(1000)
+
+
+        if feature_o > to_binary(5.0):
+            feature_o = to_binary(5.0)
+        elif feature_o < to_binary(0.5):
+            feature_o = to_binary(0.5)
 
         return Chromosome(feature_a, feature_b, feature_y, feature_d, feature_o, self.mutation_rate)
 
@@ -178,11 +217,11 @@ class Chromosome:
                 self.feature_o = to_binary(0.5)
 
     def eval(self):
-        return (pow(int(self.feature_a, 2), int(self.feature_b, 2)) + math.log(int(self.feature_y, 2))) / \
-               (int(self.feature_d, 2) + pow(int(self.feature_o, 2), 3))
+        return (pow(to_number(self.feature_a), to_number(self.feature_b)) + math.log(to_number(self.feature_y))) / \
+               (to_number(self.feature_d) + pow(to_number(self.feature_o), 3))
 
     def __str__(self):
-        return "({}^{} + ln({:.3f})) / ({} + {:.2f}^3) = {:.3f}".format(to_number(self.feature_a),
+        return "({}^{} + ln({:.2f})) / ({} + {:.2f}^3) = {:.3f}".format(to_number(self.feature_a),
                                                                         to_number(self.feature_b),
                                                                         to_number(self.feature_y),
                                                                         to_number(self.feature_d),
