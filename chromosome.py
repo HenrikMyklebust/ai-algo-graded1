@@ -2,6 +2,13 @@ import random as rnd
 import math
 
 
+def to_binary(number):
+    # 00000000000.0000000 to 11111010000.1100011
+    if type(number) == float:
+        return
+
+    elif type(number) == int:
+        return
 class Chromosome:
     def __init__(self, feature_a, feature_b, feature_y, feature_d, feature_o, mutation_rate):
         self.feature_a = feature_a  # [0, 45]
@@ -19,13 +26,12 @@ class Chromosome:
         return self.fitness
 
     def arithmetic_crossover(self, other):
-        chance = bool(rnd.randint(0, 1))
         return Chromosome(
             bin(int((int(self.feature_a) + int(other.feature_a)) / 2)),
             bin(int((int(self.feature_b) + int(other.feature_b)) / 2)),
-            bin(int((int(self.feature_y) + int(other.feature_y)) / 2)),
+            bin(int((int(self.feature_y) + int(other.feature_y)) / 2)), # Should be float
             bin(int((int(self.feature_d) + int(other.feature_d)) / 2)),
-            bin(int((int(self.feature_o) + int(other.feature_o)) / 2)),
+            bin(int((int(self.feature_o) + int(other.feature_o)) / 2)), # Should be float
             self.mutation_rate)
 
     def single_point_crossover(self, other):
