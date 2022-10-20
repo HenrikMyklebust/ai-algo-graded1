@@ -27,8 +27,9 @@ def to_binary(number):
     elif type(number) == int:
         num = bin(int(number))[2:]
 
-        while len(num) < len("00000000000"):
-            num = "0" + num
+        difference = len("00000000000") - len(num)
+        if difference > 0:
+            num = "0" * difference + num
         return "{}.0000000".format(num)
 
 
@@ -83,9 +84,9 @@ class Chromosome:
         return Chromosome(
             to_binary(int((to_number(self.feature_a) + to_number(other.feature_a)) / 2)),
             to_binary(int((to_number(self.feature_b) + to_number(other.feature_b)) / 2)),
-            to_binary((to_number(self.feature_y) + to_number(other.feature_y)) / 2), # Should be float
+            to_binary(round((to_number(self.feature_y) + to_number(other.feature_y)) / 2, 2)),
             to_binary(int((to_number(self.feature_d) + to_number(other.feature_d)) / 2)),
-            to_binary((to_number(self.feature_o) + to_number(other.feature_o)) / 2), # Should be float
+            to_binary(round((to_number(self.feature_o) + to_number(other.feature_o)) / 2, 2)),
             self.mutation_rate)
 
     def single_point_crossover(self, other):
@@ -116,9 +117,9 @@ class Chromosome:
         elif feature_b < to_binary(2):
             feature_b = to_binary(2)
 
-        if feature_y > to_binary(0.75):
+        if to_number(feature_y) > 0.75:
             feature_y = to_binary(0.75)
-        elif feature_y < to_binary(0.55):
+        elif to_number(feature_y) < 0.55:
             feature_y = to_binary(0.55)
 
         if feature_d > to_binary(2000):
@@ -126,10 +127,9 @@ class Chromosome:
         elif feature_d < to_binary(1000):
             feature_d = to_binary(1000)
 
-
-        if feature_o > to_binary(5.0):
+        if to_number(feature_o) > 5.0:
             feature_o = to_binary(5.0)
-        elif feature_o < to_binary(0.5):
+        elif to_number(feature_o) < 0.5:
             feature_o = to_binary(0.5)
 
         return Chromosome(feature_a, feature_b, feature_y, feature_d, feature_o, self.mutation_rate)
@@ -137,34 +137,38 @@ class Chromosome:
     def high_level_mutate(self):
         chance = rnd.random()
         if chance < self.mutation_rate:
-            self.feature_a = to_binary(to_number(self.feature_a) + rnd.randint(-5, 5))
-            if self.feature_a > to_binary(45):
-                self.feature_a = to_binary(45)
-            elif self.feature_a < to_binary(0):
+            if to_number(self.feature_a) - 5 < 0:
                 self.feature_a = to_binary(0)
+            else:
+                self.feature_a = to_binary(to_number(self.feature_a) + rnd.randint(-5, 5))
+
+                if to_number(self.feature_a) > 45:
+                    self.feature_a = to_binary(45)
+                elif to_number(self.feature_a) < 0:
+                    self.feature_a = to_binary(0)
 
             self.feature_b = to_binary(to_number(self.feature_b) + rnd.randint(-2, 2))
-            if self.feature_b > to_binary(5):
+            if to_number(self.feature_b) > 5:
                 self.feature_b = to_binary(5)
-            elif self.feature_b < to_binary(2):
+            elif to_number(self.feature_b) < 2:
                 self.feature_b = to_binary(2)
 
-            self.feature_y = to_binary(to_number(self.feature_y) + (rnd.randint(-2, 2) / 100))
-            if self.feature_y > to_binary(0.75):
+            self.feature_y = to_binary(round(to_number(self.feature_y) + (rnd.randint(-2, 2) / 100), 2))
+            if to_number(self.feature_y) > 0.75:
                 self.feature_y = to_binary(0.75)
-            elif self.feature_y < to_binary(0.55):
+            elif to_number(self.feature_y) < 0.55:
                 self.feature_y = to_binary(0.55)
 
             self.feature_d = to_binary(to_number(self.feature_d) + rnd.randint(-100, 100))
-            if self.feature_d > to_binary(2000):
+            if to_number(self.feature_d) > 2000:
                 self.feature_d = to_binary(2000)
-            elif self.feature_d < to_binary(1000):
+            elif to_number(self.feature_d) < 1000:
                 self.feature_d = to_binary(1000)
 
-            self.feature_o = to_binary(to_number(self.feature_o) + (rnd.randint(-5, 5) / 10))
-            if self.feature_o > to_binary(5.0):
+            self.feature_o = to_binary(round(to_number(self.feature_o) + (rnd.randint(-5, 5) / 10), 2))
+            if to_number(self.feature_o) > 5.0:
                 self.feature_o = to_binary(5.0)
-            elif self.feature_o < to_binary(0.5):
+            elif to_number(self.feature_o) < 0.5:
                 self.feature_o = to_binary(0.5)
 
     def low_level_mutate(self):
@@ -217,8 +221,8 @@ class Chromosome:
                 self.feature_o = to_binary(0.5)
 
     def eval(self):
-        return (pow(to_number(self.feature_a), to_number(self.feature_b)) + math.log(to_number(self.feature_y))) / \
-               (to_number(self.feature_d) + pow(to_number(self.feature_o), 3))
+        return (pow(to_number(self.feature_a), to_number(self.feature_b)) +math.log(round(to_number(self.feature_y), 2))) / \
+               (to_number(self.feature_d) + pow(round(to_number(self.feature_o), 2), 3))
 
     def __str__(self):
         return "({}^{} + ln({:.2f})) / ({} + {:.2f}^3) = {:.3f}".format(to_number(self.feature_a),
