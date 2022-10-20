@@ -5,17 +5,58 @@ import math
 def to_binary(number):
     # 00000000000.0000000 to 11111010000.1100011
     if type(number) == float:
-        return
+        num, decimal = str(number).split(".")
 
+        if len(decimal) == 1:
+            decimal = decimal + "0"
+
+        num = bin(int(num))[2:]
+        decimal = bin(int(decimal))[2:]
+
+        while len(num) < len("00000000000"):
+            num = "0" + num
+
+        while len(decimal) < len("0000000"):
+            decimal = "0" + decimal
+        return "{}.{}".format(num, decimal)
+
+    # 00000000000.0000000 to 11111010000.0000000
     elif type(number) == int:
-        return
+        num = to_binary(int(number))[2:]
+
+        while len(num) < len("00000000000"):
+            num = "0" + num
+        return "{}.0000000".format(num)
+
+
+def to_number(binary):
+    num, decimal = str(binary).split(".")
+
+    # Return integer
+    if decimal == "0000000":
+        return int(num, 2)
+
+    # Return float
+    else:
+        return float(str(int(num, 2)) + "." + str(int(decimal, 2)))
+
+
+def change_bit(number):
+    bit_index = rnd.randint(0, len(number))
+    if number[bit_index] == "0":
+        number[bit_index] = 1
+    else:
+        number[bit_index] = 0
+    return number
+
 class Chromosome:
     def __init__(self, feature_a, feature_b, feature_y, feature_d, feature_o, mutation_rate):
-        self.feature_a = feature_a  # [0, 45]
-        self.feature_b = feature_b  # [2, 5]
-        self.feature_y = feature_y  # [0.55, 0.75]
-        self.feature_d = feature_d  # [1000, 2000]
-        self.feature_o = feature_o  # [0.5, 5.0]
+        # Binary format: 00000000000.0000000
+        self.feature_a = feature_a  # Binary [0, 45]
+        self.feature_b = feature_b  # Binary [2, 5]
+        self.feature_y = feature_y  # Binary [0.55, 0.75]
+        self.feature_d = feature_d  # Binary [1000, 2000]
+        self.feature_o = feature_o  # Binary [0.5, 5.0]
         self.fitness = float('inf')
         self.mutation_rate = mutation_rate
 
@@ -27,11 +68,11 @@ class Chromosome:
 
     def arithmetic_crossover(self, other):
         return Chromosome(
-            bin(int((int(self.feature_a) + int(other.feature_a)) / 2)),
-            bin(int((int(self.feature_b) + int(other.feature_b)) / 2)),
-            bin(int((int(self.feature_y) + int(other.feature_y)) / 2)), # Should be float
-            bin(int((int(self.feature_d) + int(other.feature_d)) / 2)),
-            bin(int((int(self.feature_o) + int(other.feature_o)) / 2)), # Should be float
+            to_binary(int((to_number(self.feature_a) + to_number(other.feature_a)) / 2)),
+            to_binary(int((to_number(self.feature_b) + to_number(other.feature_b)) / 2)),
+            to_binary(int((to_number(self.feature_y) + to_number(other.feature_y)) / 2)), # Should be float
+            to_binary(int((to_number(self.feature_d) + to_number(other.feature_d)) / 2)),
+            to_binary(int((to_number(self.feature_o) + to_number(other.feature_o)) / 2)), # Should be float
             self.mutation_rate)
 
     def single_point_crossover(self, other):
@@ -43,52 +84,107 @@ class Chromosome:
             self.feature_o if bool(rnd.randint(0, 1)) else other.feature_o,
             self.mutation_rate)
 
-    #def multi_point_crossover(self, other):
-    #    return Chromosome(
-    #        self.feature_a if bool(rnd.randint(0, 1)) else other.feature_a,
-    #        self.feature_b if bool(rnd.randint(0, 1)) else other.feature_b,
-    #        self.feature_y if bool(rnd.randint(0, 1)) else other.feature_y,
-    #        self.feature_d if bool(rnd.randint(0, 1)) else other.feature_d,
-    #        self.feature_o if bool(rnd.randint(0, 1)) else other.feature_o,
-    #        self.mutation_rate)
+    def multi_point_crossover(self, other):
+        feature_a, feature_b, feature_y, feature_d, feature_o = "", "", "", "", ""
+        for i in range(len(self.feature_a)):
+            feature_a = feature_a + self.feature_a[i] if bool(rnd.randint(0, 1)) else other.feature_a[i]
+            feature_b = feature_b + self.feature_b[i] if bool(rnd.randint(0, 1)) else other.feature_b[i]
+            feature_y = feature_y + self.feature_y[i] if bool(rnd.randint(0, 1)) else other.feature_y[i]
+            feature_d = feature_d + self.feature_d[i] if bool(rnd.randint(0, 1)) else other.feature_d[i]
+            feature_o = feature_o + self.feature_o[i] if bool(rnd.randint(0, 1)) else other.feature_o[i]
 
-    def mutate(self):
+        return Chromosome(feature_a, feature_b, feature_y, feature_d, feature_o, self.mutation_rate)
+
+    def high_level_mutate(self):
         chance = rnd.random()
         if chance < self.mutation_rate:
-            self.feature_a = bin(int(self.feature_a, 2) + rnd.randint(-5, 5))
-            if self.feature_a > bin(45):
-                self.feature_a = bin(45)
-            elif self.feature_a < bin(0):
-                self.feature_a = bin(0)
+            self.feature_a = to_binary(to_number(self.feature_a) + rnd.randint(-5, 5))
+            if self.feature_a > to_binary(45):
+                self.feature_a = to_binary(45)
+            elif self.feature_a < to_binary(0):
+                self.feature_a = to_binary(0)
 
-            self.feature_b = bin(int(self.feature_b, 2) + rnd.randint(-2, 2))
-            if self.feature_b > bin(5):
-                self.feature_b = bin(5)
-            elif self.feature_b < bin(2):
-                self.feature_b = bin(2)
+            self.feature_b = to_binary(to_number(self.feature_b) + rnd.randint(-2, 2))
+            if self.feature_b > to_binary(5):
+                self.feature_b = to_binary(5)
+            elif self.feature_b < to_binary(2):
+                self.feature_b = to_binary(2)
 
-            self.feature_y += rnd.uniform(-0.02, 0.02)
-            if self.feature_y > 0.75:
-                self.feature_y = 0.75
-            elif self.feature_y < 0.55:
-                self.feature_y = 0.55
+            self.feature_y = to_binary(to_number(self.feature_y) + (rnd.randint(-2, 2) / 100))
+            if self.feature_y > to_binary(0.75):
+                self.feature_y = to_binary(0.75)
+            elif self.feature_y < to_binary(0.55):
+                self.feature_y = to_binary(0.55)
 
-            self.feature_d = bin(int(self.feature_d, 2) + rnd.randint(-100, 100))
-            if self.feature_d > bin(2000):
-                self.feature_d = bin(2000)
-            elif self.feature_d < bin(1000):
-                self.feature_d = bin(1000)
+            self.feature_d = to_binary(to_number(self.feature_d) + rnd.randint(-100, 100))
+            if self.feature_d > to_binary(2000):
+                self.feature_d = to_binary(2000)
+            elif self.feature_d < to_binary(1000):
+                self.feature_d = to_binary(1000)
 
-            self.feature_o += rnd.uniform(-0.5, 0.5)
-            if self.feature_o > 5.0:
-                self.feature_o = 5.0
-            elif self.feature_o < 0.5:
-                self.feature_o = 0.5
+            self.feature_o = to_binary(to_number(self.feature_o) + (rnd.randint(-5, 5) / 10))
+            if self.feature_o > to_binary(5.0):
+                self.feature_o = to_binary(5.0)
+            elif self.feature_o < to_binary(0.5):
+                self.feature_o = to_binary(0.5)
+
+    def low_level_mutate(self):
+        chance = rnd.random()
+        if chance < self.mutation_rate:
+
+            # Integer bit flip
+            feature_a_num, feature_a_decimal = self.feature_a.split(".")
+            feature_a_num = change_bit(feature_a_num)
+            self.feature_a = feature_a_num + "." + feature_a_decimal
+            if self.feature_a > to_binary(45):
+                self.feature_a = to_binary(45)
+            elif self.feature_a < to_binary(0):
+                self.feature_a = to_binary(0)
+
+            # Integer bit flip
+            feature_b_num, feature_b_decimal = self.feature_b.split(".")
+            feature_b_num = change_bit(feature_b_num)
+            self.feature_b = feature_b_num + "." + feature_b_decimal
+            if self.feature_b > to_binary(5):
+                self.feature_b = to_binary(5)
+            elif self.feature_b < to_binary(2):
+                self.feature_b = to_binary(2)
+
+            # Float bit flip
+            feature_y_num, feature_y_decimal = self.feature_y.split(".")
+            feature_y_decimal = change_bit(feature_y_decimal)
+            self.feature_y = feature_y_num + "." + feature_y_decimal
+            if self.feature_y > to_binary(0.75):
+                self.feature_y = to_binary(0.75)
+            elif self.feature_y < to_binary(0.55):
+                self.feature_y = to_binary(0.55)
+
+            # Integer bit flip
+            feature_d_num, feature_d_decimal = self.feature_d.split(".")
+            feature_d_num = change_bit(feature_d_num)
+            self.feature_d = feature_d_num + "." + feature_d_decimal
+            if self.feature_d > to_binary(2000):
+                self.feature_d = to_binary(2000)
+            elif self.feature_d < to_binary(1000):
+                self.feature_d = to_binary(1000)
+
+            # Float bit flip
+            feature_o_num, feature_o_decimal = self.feature_o.split(".")
+            feature_o_decimal = change_bit(feature_o_decimal)
+            self.feature_o = feature_o_num + "." + feature_o_decimal
+            if self.feature_o > to_binary(5.0):
+                self.feature_o = to_binary(5.0)
+            elif self.feature_o < to_binary(0.5):
+                self.feature_o = to_binary(0.5)
 
     def eval(self):
         return (pow(int(self.feature_a, 2), int(self.feature_b, 2)) + math.log(int(self.feature_y, 2))) / \
                (int(self.feature_d, 2) + pow(int(self.feature_o, 2), 3))
 
     def __str__(self):
-        return "({}^{} + ln({:.3f})) / ({} + {:.3f}^3) = {:.3f}".format(self.feature_a, self.feature_b, self.feature_y,
-                                                                        self.feature_d, self.feature_o, eval())
+        return "({}^{} + ln({:.3f})) / ({} + {:.2f}^3) = {:.3f}".format(to_number(self.feature_a),
+                                                                        to_number(self.feature_b),
+                                                                        to_number(self.feature_y),
+                                                                        to_number(self.feature_d),
+                                                                        to_number(self.feature_o),
+                                                                        self.eval())

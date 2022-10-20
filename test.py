@@ -1,6 +1,7 @@
+import chromosome
+
 if __name__ == '__main__':
-    a = bin(6.6)
-    b = bin(6)
-    print(type(b))
-    c = int(a, 2)-int(b, 2)
-    print(a == b)
+
+    binary = chromosome.to_binary(2000.11)
+    binary2 = chromosome.to_binary(0.2)
+    print()
